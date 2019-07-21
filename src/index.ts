@@ -1,28 +1,35 @@
-import { IJobQueryResults, IEventNotifier } from './types';
+import { IQuery, IEventNotifier, ScheduledEvents } from './types';
 
 export class Scheduler {
     eventNotifier: IEventNotifier;
-    jobQueryResults: IJobQueryResults;
+    query: IQuery;
 
     constructor({
         eventNotifier,
-        jobQueryResults,
+        query,
     }: {
         eventNotifier: IEventNotifier;
-        jobQueryResults: IJobQueryResults;
+        query: IQuery;
     }) {
-        console.log('Constructor');
         this.eventNotifier = eventNotifier;
-        this.jobQueryResults = jobQueryResults;
+        this.query = query;
     }
 
-    async scheduleJobs() {
-        console.log('abc');
-        console.log({ queryResults: this.jobQueryResults });
-        for (const queryResult of this.jobQueryResults) {
-            await this.eventNotifier.subscriptionPlanChangeOver({
+    async scheduleEvents() {
+        const eventJobs: Promise<void[]>[] = [];
+        for (const event in ScheduledEvents) {
+            eventJobs.push(this.scheduleEvent(event as ScheduledEvents));
+        }
+        await Promise.all(eventJobs);
+    }
+
+    private async scheduleEvent(event: ScheduledEvents) {
+        const queryResults = await this.query[event]();
+        const scheduledJobs: Promise<void>[] = queryResults.map(queryResult => {
+            return this.eventNotifier[event]({
                 subscriptionId: queryResult.subscriptionId,
             });
-        }
+        });
+        return await Promise.all(scheduledJobs);
     }
 }

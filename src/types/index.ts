@@ -10,3 +10,11 @@ export interface IEventNotifier {
         args: ISubscriptionPlanChangeArguments
     ): Promise<void>;
 }
+
+export interface IQuery {
+    subscriptionPlanChangeOver(): Promise<IJobQueryResults>;
+}
+
+export enum ScheduledEvents {
+    subscriptionPlanChangeOver = 'subscriptionPlanChangeOver',
+}

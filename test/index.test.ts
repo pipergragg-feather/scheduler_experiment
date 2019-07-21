@@ -3,6 +3,7 @@ import {
     IJobQueryResults,
     IEventNotifier,
     ISubscriptionPlanChangeArguments,
+    IQuery,
 } from '../src/types';
 
 class MockEventNotifier implements IEventNotifier {
@@ -13,8 +14,20 @@ class MockEventNotifier implements IEventNotifier {
     async subscriptionPlanChangeOver(
         args: ISubscriptionPlanChangeArguments
     ): Promise<void> {
-        console.log({ args });
         this.mockFn(args);
+    }
+}
+
+class MockQuery implements IQuery {
+    mockFn: Function;
+    jobQueryResults: IJobQueryResults;
+    constructor(jobQueryResults: IJobQueryResults) {
+        this.mockFn = jest.fn();
+        this.jobQueryResults = jobQueryResults;
+    }
+    async subscriptionPlanChangeOver(): Promise<IJobQueryResults> {
+        this.mockFn();
+        return this.jobQueryResults;
     }
 }
 
@@ -22,13 +35,13 @@ it('Kicks off events based on rule conditions', async () => {
     const eventNotifier = new MockEventNotifier();
     const subscriptionId = 100502;
     const queryResults: IJobQueryResults = [{ subscriptionId }];
-
+    const query = new MockQuery(queryResults);
     const scheduler = new Scheduler({
         eventNotifier: eventNotifier,
-        jobQueryResults: queryResults,
+        query: query,
     });
-    console.log({ scheduler });
-    await scheduler.scheduleJobs();
+
+    await scheduler.scheduleEvents();
 
     expect(eventNotifier.mockFn).toBeCalledWith(queryResults[0]);
 });
